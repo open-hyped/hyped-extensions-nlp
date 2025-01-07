@@ -103,12 +103,12 @@ class TokenizerOutput(Mapping):
     """The numerical token IDs for the input sequence(s)."""
 
     tokens: Annotated[
-        Sequence[String] | None, OutputLength, ExcludeFieldIf(lambda c, i, _: not c.return_tokens)
+        Sequence[String], OutputLength, ExcludeFieldIf(lambda c, i, _: not c.return_tokens)
     ]
     """The tokenized string representations, included if `return_tokens` is enabled."""
 
     token_type_ids: Annotated[
-        Sequence[Int32] | None,
+        Sequence[Int32],
         OutputLength,
         ExcludeFieldIf(lambda c, i, _: not c.return_token_type_ids),
     ]
@@ -116,7 +116,7 @@ class TokenizerOutput(Mapping):
     `return_token_type_ids` is enabled."""
 
     attention_mask: Annotated[
-        Sequence[Int32] | None,
+        Sequence[Int32],
         OutputLength,
         ExcludeFieldIf(lambda c, i, _: not c.return_attention_mask),
     ]
@@ -124,7 +124,7 @@ class TokenizerOutput(Mapping):
     `return_attention_mask` is enabled."""
 
     special_tokens_mask: Annotated[
-        Sequence[Int32] | None,
+        Sequence[Int32],
         OutputLength,
         ExcludeFieldIf(lambda c, i, _: not c.return_special_tokens_mask),
     ]
@@ -132,19 +132,19 @@ class TokenizerOutput(Mapping):
     if `return_special_tokens_mask` is enabled."""
 
     offset_mapping: Annotated[
-        Sequence[Annotated[Sequence[Int32], Len(2)]] | None,
+        Sequence[Annotated[Sequence[Int32], Len(2)]],
         OutputLength,
         ExcludeFieldIf(lambda c, i, _: not c.return_offsets_mapping),
     ]
     """Character-level start and end offsets for each token, included
     if `return_offsets_mapping` is enabled."""
 
-    length: Annotated[Int32 | None, ExcludeFieldIf(lambda c, i, _: not c.return_length)]
+    length: Annotated[Int32, ExcludeFieldIf(lambda c, i, _: not c.return_length)]
     """The total length of the tokenized sequence, included
     if `return_length` is enabled."""
 
     word_ids: Annotated[
-        Sequence[Int32] | None, OutputLength, ExcludeFieldIf(lambda c, i, _: not c.return_word_ids)
+        Sequence[Int32], OutputLength, ExcludeFieldIf(lambda c, i, _: not c.return_word_ids)
     ]
     """Word-level alignment indices for tokens, included
     if `return_word_ids` is enabled."""
