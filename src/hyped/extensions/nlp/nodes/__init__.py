@@ -1,1 +1,1 @@
-"""Node implementations for Natural Language Processing"""
+"""Node implementations for Natural Language Processing."""

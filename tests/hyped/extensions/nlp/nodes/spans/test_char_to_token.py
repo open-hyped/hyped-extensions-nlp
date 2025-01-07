@@ -1,6 +1,7 @@
 from typing import Annotated
+
 from hyped.core.testing.processor import BaseDataProcessorTest
-from hyped.core.typing import Len, Sequence, Int
+from hyped.core.typing import Int, Len, Sequence
 from hyped.extensions.nlp import CharToTokenSpans
 from hyped.extensions.nlp.nodes.spans.char_to_token import Spans
 

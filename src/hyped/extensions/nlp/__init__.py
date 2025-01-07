@@ -1,9 +1,10 @@
-"""Hyped Natural Language Processing Extension
+"""Hyped Natural Language Processing Extension.
 
 Natural Language Processing Extension
 """
 
 from typing import TYPE_CHECKING
+
 from .__version__ import __version__, __version_tuple__
 
 # list all imports

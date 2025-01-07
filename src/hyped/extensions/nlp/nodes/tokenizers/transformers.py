@@ -7,13 +7,21 @@ attention masks, special tokens masks, offset mappings, and word IDs. It offers
 flexible configuration options to customize tokenization behavior and control
 the output features generated during tokenization.
 """
+from typing import Annotated
+
+import pyarrow as pa
 from transformers import AutoTokenizer
 from transformers.tokenization_utils import PaddingStrategy, TruncationStrategy
-from typing import Annotated
-from hyped.core import process_mode, RunContext, BaseDataProcessor, BaseDataProcessorConfig
-from hyped.core.features.features import SequenceFeature
-from hyped.typing import Sequence, String, Mapping, Int32, Len, ExcludeFieldIf, FeatureResolver, FeatureValidator
-import pyarrow as pa
+
+from hyped.core import (
+    BaseDataProcessor,
+    BaseDataProcessorConfig,
+    RunContext,
+    ValidationSession,
+    process_mode,
+)
+from hyped.core.typing import SequenceFeature
+from hyped.typing import ExcludeFieldIf, FeatureValidator, Int32, Len, Mapping, Sequence, String
 
 
 class TransformersTokenizerConfig(BaseDataProcessorConfig):
@@ -65,7 +73,9 @@ class TransformersTokenizerConfig(BaseDataProcessorConfig):
     """Whether to include word IDs in the output."""
 
 
-def _get_output_sequence_length(config: TransformersTokenizerConfig) -> int | None:
+def _get_output_sequence_length(
+    config: TransformersTokenizerConfig, stored_length: int | None, session: ValidationSession
+) -> int | None:
     """Determine the sequence length based on tokenizer configuration."""
     # check for constant length
     is_constant = (
@@ -77,30 +87,86 @@ def _get_output_sequence_length(config: TransformersTokenizerConfig) -> int | No
     return config.max_length if is_constant else None
 
 
+OutputLength = Len(_get_output_sequence_length)
+
+
 class TokenizerOutput(Mapping):
-    input_ids: Annotated[Sequence[Int32], FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
-    tokens: Annotated[Sequence[String] | None, ExcludeFieldIf(lambda c, i, _: not c.return_tokens), FeatureResolver(lambda c, i, _: Annotated[Sequence[String], Len(_get_output_sequence_length(c))])]
-    token_type_ids: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_token_type_ids), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
-    attention_mask: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_attention_mask), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
-    special_tokens_mask: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_special_tokens_mask), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
-    offset_mapping: Annotated[Sequence[Annotated[Sequence[Int32], Len(2)]] | None, ExcludeFieldIf(lambda c, i, _: not c.return_offsets_mapping), FeatureResolver(lambda c, i, _: Annotated[Sequence[Annotated[Sequence[Int32], Len(2)]], Len(_get_output_sequence_length(c))])]
+    """A mapping that represents the output of the Transformers Tokenizer processor.
+
+    This class encapsulates various features generated during tokenization,
+    such as input IDs, attention masks, token type IDs, and other optional
+    outputs. The specific attributes included in the output depend on the
+    configuration provided to the tokenizer.
+    """
+
+    input_ids: Annotated[Sequence[Int32], OutputLength]
+    """The numerical token IDs for the input sequence(s)."""
+
+    tokens: Annotated[
+        Sequence[String] | None, OutputLength, ExcludeFieldIf(lambda c, i, _: not c.return_tokens)
+    ]
+    """The tokenized string representations, included if `return_tokens` is enabled."""
+
+    token_type_ids: Annotated[
+        Sequence[Int32] | None,
+        OutputLength,
+        ExcludeFieldIf(lambda c, i, _: not c.return_token_type_ids),
+    ]
+    """Identifiers for differentiating sequence segments, included if
+    `return_token_type_ids` is enabled."""
+
+    attention_mask: Annotated[
+        Sequence[Int32] | None,
+        OutputLength,
+        ExcludeFieldIf(lambda c, i, _: not c.return_attention_mask),
+    ]
+    """Masks indicating attentionable tokens, included if
+    `return_attention_mask` is enabled."""
+
+    special_tokens_mask: Annotated[
+        Sequence[Int32] | None,
+        OutputLength,
+        ExcludeFieldIf(lambda c, i, _: not c.return_special_tokens_mask),
+    ]
+    """Masks for identifying special tokens, included
+    if `return_special_tokens_mask` is enabled."""
+
+    offset_mapping: Annotated[
+        Sequence[Annotated[Sequence[Int32], Len(2)]] | None,
+        OutputLength,
+        ExcludeFieldIf(lambda c, i, _: not c.return_offsets_mapping),
+    ]
+    """Character-level start and end offsets for each token, included
+    if `return_offsets_mapping` is enabled."""
+
     length: Annotated[Int32 | None, ExcludeFieldIf(lambda c, i, _: not c.return_length)]
-    word_ids: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_word_ids), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
+    """The total length of the tokenized sequence, included
+    if `return_length` is enabled."""
+
+    word_ids: Annotated[
+        Sequence[Int32] | None, OutputLength, ExcludeFieldIf(lambda c, i, _: not c.return_word_ids)
+    ]
+    """Word-level alignment indices for tokens, included
+    if `return_word_ids` is enabled."""
 
 
-def _validate_text_type(feature: String | Sequence[String], config: TransformersTokenizerConfig, session):
+def _validate_text_type(
+    feature: String | Sequence[String],
+    config: TransformersTokenizerConfig,
+    session: ValidationSession,
+):
     if config.is_split_into_words:
         if isinstance(feature, String):
             raise TypeError(
-                f"Expects a list of pre-tokenized words "
+                "Expects a list of pre-tokenized words "
                 "when `is_split_into_words=True`. You possibly "
                 "passed the input text as a single string."
             )
     elif isinstance(feature, SequenceFeature):
         raise TypeError(
-                f"Expects a string as input "
-                "when `is_split_into_words=False`. Got a Sequence of strings."
-            )
+            "Expects a string as input "
+            "when `is_split_into_words=False`. Got a Sequence of strings."
+        )
     return feature
 
 
@@ -129,10 +195,38 @@ class TransformersTokenizer(BaseDataProcessor[TransformersTokenizerConfig]):
         self,
         ctx: RunContext,
         text: Annotated[String | Sequence[String], FeatureValidator(_validate_text_type)],
-        text_pair: Annotated[String | Sequence[String] | None, FeatureValidator(_validate_text_type)] = None,
-        text_target: Annotated[String | Sequence[String] | None, FeatureValidator(_validate_text_type)] = None,
-        text_pair_target: Annotated[String | Sequence[String] | None, FeatureValidator(_validate_text_type)] = None,
+        text_pair: Annotated[
+            String | Sequence[String] | None, FeatureValidator(_validate_text_type)
+        ] = None,
+        text_target: Annotated[
+            String | Sequence[String] | None, FeatureValidator(_validate_text_type)
+        ] = None,
+        text_pair_target: Annotated[
+            String | Sequence[String] | None, FeatureValidator(_validate_text_type)
+        ] = None,
     ) -> TokenizerOutput:
+        """Tokenize input text using the configured Transformers tokenizer.
+
+        Args:
+            ctx (RunContext): The runtime context of the process, including metadata
+                about the current execution environment.
+            text (String | Sequence[String]): The main
+                input text or sequence of texts to tokenize. If `is_split_into_words`
+                is set to True, expects a sequence of pre-tokenized words.
+            text_pair (String | Sequence[String] | None):
+                A secondary text or sequence of texts to tokenize alongside the main
+                input for sequence pair tasks. Defaults to None.
+            text_target (String | Sequence[String] | None):
+                Target text for sequence-to-sequence tasks. Defaults to None.
+            text_pair_target (String | Sequence[String] | None):
+                Target text for the secondary sequence in sequence-to-sequence tasks.
+                Defaults to None.
+
+        Returns:
+            TokenizerOutput: A structured output containing various tokenization
+            features, such as input IDs, tokens, token type IDs, attention masks,
+            and additional fields as per the processor's configuration.
+        """
         # apply tokenizer
         enc = self.tokenizer(
             text=text.to_pylist(),
@@ -159,7 +253,8 @@ class TransformersTokenizer(BaseDataProcessor[TransformersTokenizerConfig]):
             out["tokens"] = list(map(self.tokenizer.convert_ids_to_tokens, enc.input_ids))
         if self.config.return_word_ids:
             out["word_ids"] = [
-                [(i if i is not None else -1) for i in enc.word_ids(j)] for j in range(len(ctx.index))
+                [(i if i is not None else -1) for i in enc.word_ids(j)]
+                for j in range(len(ctx.index))
             ]
         # convert dict-of-lists to arrow StructArray
         return pa.table(out, schema=ctx.output_type.arrow_schema).to_struct_array()
