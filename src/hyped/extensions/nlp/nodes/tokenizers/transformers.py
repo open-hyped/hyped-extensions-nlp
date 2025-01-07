@@ -20,7 +20,7 @@ from hyped.core import (
     ValidationSession,
     process_mode,
 )
-from hyped.core.typing import SequenceFeature
+from hyped.core.typing import SequenceFeature, StringFeature
 from hyped.typing import ExcludeFieldIf, FeatureValidator, Int32, Len, Mapping, Sequence, String
 
 
@@ -156,7 +156,7 @@ def _validate_text_type(
     session: ValidationSession,
 ):
     if config.is_split_into_words:
-        if isinstance(feature, String):
+        if isinstance(feature, StringFeature):
             raise TypeError(
                 "Expects a list of pre-tokenized words "
                 "when `is_split_into_words=True`. You possibly "

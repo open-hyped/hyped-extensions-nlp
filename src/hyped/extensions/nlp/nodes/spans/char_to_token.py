@@ -38,7 +38,7 @@ class CharToTokenSpans(BaseDataProcessor[CharToTokenSpansConfig]):
     def process(
         self,
         ctx: RunContext,
-        chr_spans: Annotated[Spans, ChrSpansLength],
+        char_spans: Annotated[Spans, ChrSpansLength],
         query_spans: Annotated[Spans, QuerySpansLength],
         special_tokens_mask: Annotated[Sequence[Int], ChrSpansLength] | None = None,
     ) -> Annotated[Spans, QuerySpansLength]:
@@ -47,7 +47,7 @@ class CharToTokenSpans(BaseDataProcessor[CharToTokenSpansConfig]):
         Args:
             ctx (RunContext): The runtime context for the data processor, providing execution
                 environment details.
-            chr_spans (Annotated[Spans, ChrSpansLength]): A sequence of character spans
+            char_spans (Annotated[Spans, ChrSpansLength]): A sequence of character spans
                 (length :code:`ChrSpansLength`) of the tokens, represented as a sequence of
                 :code:`[start, end]` positions.
             query_spans (Annotated[Spans, QuerySpansLength]): A sequence of query spans
@@ -63,10 +63,10 @@ class CharToTokenSpans(BaseDataProcessor[CharToTokenSpansConfig]):
                 to token indices.
         """
         query_spans = np.asarray(query_spans)
-        chr_spans = np.asarray(chr_spans)
+        char_spans = np.asarray(char_spans)
         # the query spans and the character spans
         overlap = compute_spans_overlap_matrix(
-            source_spans=query_spans, target_spans=chr_spans, special_tokens=special_tokens_mask
+            source_spans=query_spans, target_spans=char_spans, special_tokens=special_tokens_mask
         )
         # get begins and ends from mask
         tok_spans_begin = overlap.argmax(axis=1)
@@ -74,12 +74,12 @@ class CharToTokenSpans(BaseDataProcessor[CharToTokenSpansConfig]):
 
         # exclude partially overlapping tokens at the beginning
         if not self.config.include_partial_start:
-            partial_mask = chr_spans[tok_spans_begin, 0] != query_spans[:, 0]
+            partial_mask = char_spans[tok_spans_begin, 0] != query_spans[:, 0]
             tok_spans_begin[partial_mask] += 1
 
         # exclude partially overlapping tokens at the end
         if not self.config.include_partial_end:
-            partial_mask = chr_spans[tok_spans_end - 1, 1] != query_spans[:, 1]
+            partial_mask = char_spans[tok_spans_end - 1, 1] != query_spans[:, 1]
             tok_spans_end[partial_mask] -= 1
 
         # build output
