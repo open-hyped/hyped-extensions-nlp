@@ -9,9 +9,10 @@ the output features generated during tokenization.
 """
 from transformers import AutoTokenizer
 from transformers.tokenization_utils import PaddingStrategy, TruncationStrategy
-from typing_extensions import Annotated
+from typing import Annotated
 from hyped.core import process_mode, RunContext, BaseDataProcessor, BaseDataProcessorConfig
-from hyped.typing import Sequence, String, Mapping, Int32, Len, ExcludeFieldIf
+from hyped.core.features.features import SequenceFeature
+from hyped.typing import Sequence, String, Mapping, Int32, Len, ExcludeFieldIf, FeatureResolver, FeatureValidator
 import pyarrow as pa
 
 
@@ -64,15 +65,43 @@ class TransformersTokenizerConfig(BaseDataProcessorConfig):
     """Whether to include word IDs in the output."""
 
 
+def _get_output_sequence_length(config: TransformersTokenizerConfig) -> int | None:
+    """Determine the sequence length based on tokenizer configuration."""
+    # check for constant length
+    is_constant = (
+        (config.max_length is not None)
+        and (config.padding == "max_length")
+        and (config.truncation in (True, "longest_first", "only_first", "only_second"))
+    )
+    # get sequence length in case it's constant
+    return config.max_length if is_constant else None
+
+
 class TokenizerOutput(Mapping):
-    input_ids: Sequence[Int32]
-    tokens: Annotated[Sequence[String] | None, ExcludeFieldIf(lambda c, i, _: not c.return_tokens)]
-    token_type_ids: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_token_type_ids)]
-    attention_mask: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_attention_mask)]
-    special_tokens_mask: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_special_tokens_mask)]
-    offset_mapping: Annotated[Sequence[Annotated[Sequence[Int32], Len(2)]] | None, ExcludeFieldIf(lambda c, i, _: not c.return_offsets_mapping)]
+    input_ids: Annotated[Sequence[Int32], FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
+    tokens: Annotated[Sequence[String] | None, ExcludeFieldIf(lambda c, i, _: not c.return_tokens), FeatureResolver(lambda c, i, _: Annotated[Sequence[String], Len(_get_output_sequence_length(c))])]
+    token_type_ids: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_token_type_ids), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
+    attention_mask: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_attention_mask), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
+    special_tokens_mask: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_special_tokens_mask), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
+    offset_mapping: Annotated[Sequence[Annotated[Sequence[Int32], Len(2)]] | None, ExcludeFieldIf(lambda c, i, _: not c.return_offsets_mapping), FeatureResolver(lambda c, i, _: Annotated[Sequence[Annotated[Sequence[Int32], Len(2)]], Len(_get_output_sequence_length(c))])]
     length: Annotated[Int32 | None, ExcludeFieldIf(lambda c, i, _: not c.return_length)]
-    word_ids: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_word_ids)]
+    word_ids: Annotated[Sequence[Int32] | None, ExcludeFieldIf(lambda c, i, _: not c.return_word_ids), FeatureResolver(lambda c, i, _: Annotated[Sequence[Int32], Len(_get_output_sequence_length(c))])]
+
+
+def _validate_text_type(feature: String | Sequence[String], config: TransformersTokenizerConfig, session):
+    if config.is_split_into_words:
+        if isinstance(feature, String):
+            raise TypeError(
+                f"Expects a list of pre-tokenized words "
+                "when `is_split_into_words=True`. You possibly "
+                "passed the input text as a single string."
+            )
+    elif isinstance(feature, SequenceFeature):
+        raise TypeError(
+                f"Expects a string as input "
+                "when `is_split_into_words=False`. Got a Sequence of strings."
+            )
+    return feature
 
 
 class TransformersTokenizer(BaseDataProcessor[TransformersTokenizerConfig]):
@@ -99,10 +128,10 @@ class TransformersTokenizer(BaseDataProcessor[TransformersTokenizerConfig]):
     def process(
         self,
         ctx: RunContext,
-        text: String | Sequence[String],
-        text_pair: String | Sequence[String] | None = None,
-        text_target: String | Sequence[String] | None = None,
-        text_pair_target: String | Sequence[String] | None = None,
+        text: Annotated[String | Sequence[String], FeatureValidator(_validate_text_type)],
+        text_pair: Annotated[String | Sequence[String] | None, FeatureValidator(_validate_text_type)] = None,
+        text_target: Annotated[String | Sequence[String] | None, FeatureValidator(_validate_text_type)] = None,
+        text_pair_target: Annotated[String | Sequence[String] | None, FeatureValidator(_validate_text_type)] = None,
     ) -> TokenizerOutput:
         # apply tokenizer
         enc = self.tokenizer(
