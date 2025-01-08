@@ -6,17 +6,13 @@ from hyped.extensions.nlp.nodes.tokenizers.transformers import TokenizerOutput
 
 class TestTransformersTokenizer(BaseDataProcessorTest):
     processor = TransformersTokenizer(tokenizer="./tests/artifacts/tokenizers/bert-base-uncased")
-    input_features = {
-        "text": String,
-    }
+    input_features = {"text": String}
     input_data = [
-        {
-            "text": "Hello LLM, what's up?",
-        }
+        {"text": "Hello LLM, what's up?"},
     ]
     expected_output_feature = TokenizerOutput
     expected_output_data = [
-        {"input_ids": [101, 7592, 2222, 2213, 1010, 2054, 1005, 1055, 2039, 1029, 102]}
+        {"input_ids": [101, 7592, 2222, 2213, 1010, 2054, 1005, 1055, 2039, 1029, 102]},
     ]
 
 
@@ -31,13 +27,9 @@ class TestTransformersTokenizerAllFeatures(BaseDataProcessorTest):
         return_length=True,
         return_word_ids=True,
     )
-    input_features = {
-        "text": String,
-    }
+    input_features = {"text": String}
     input_data = [
-        {
-            "text": "Hello LLM, what's up?",
-        }
+        {"text": "Hello LLM, what's up?"},
     ]
     expected_output_feature = TokenizerOutput
     expected_output_data = [
@@ -62,6 +54,78 @@ class TestTransformersTokenizerAllFeatures(BaseDataProcessorTest):
             "token_type_ids": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             "tokens": ["[CLS]", "hello", "ll", "##m", ",", "what", "'", "s", "up", "?", "[SEP]"],
             "word_ids": [-1, 0, 1, 1, 2, 3, 4, 5, 6, 7, -1],
+        },
+    ]
+
+
+class TestTransformersTokenizerTextPairTarget(BaseDataProcessorTest):
+    processor = TransformersTokenizer(
+        tokenizer="./tests/artifacts/tokenizers/bert-base-uncased",
+        max_length=20,
+        padding="max_length",
+        truncation=True,
+    )
+    input_features = {
+        "text": String,
+        "text_pair": String,
+        "text_target": String,
+        "text_pair_target": String,
+    }
+    input_data = [
+        {
+            "text": "This is sentence A.",
+            "text_pair": "This is sentence B.",
+            "text_target": "Das ist Satz A.",
+            "text_pair_target": "Das ist Satz B.",
+        }
+    ]
+    expected_output_feature = TokenizerOutput
+    expected_output_data = [
+        {
+            "input_ids": [
+                101,
+                2023,
+                2003,
+                6251,
+                1037,
+                1012,
+                102,
+                2023,
+                2003,
+                6251,
+                1038,
+                1012,
+                102,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ],
+            "labels": [
+                101,
+                8695,
+                21541,
+                2938,
+                2480,
+                1037,
+                1012,
+                102,
+                8695,
+                21541,
+                2938,
+                2480,
+                1038,
+                1012,
+                102,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ],
         }
     ]
 
@@ -70,13 +134,13 @@ class TestTransformersTokenizerSplitIntoWords(BaseDataProcessorTest):
     processor = TransformersTokenizer(
         tokenizer="./tests/artifacts/tokenizers/bert-base-uncased", is_split_into_words=True
     )
-    input_features = {
-        "text": Sequence[String],
-    }
-    input_data = [{"text": ["Hello", "LLM", ",", "what's", "up", "?"]}]
+    input_features = {"text": Sequence[String]}
+    input_data = [
+        {"text": ["Hello", "LLM", ",", "what's", "up", "?"]},
+    ]
     expected_output_feature = TokenizerOutput
     expected_output_data = [
-        {"input_ids": [101, 7592, 2222, 2213, 1010, 2054, 1005, 1055, 2039, 1029, 102]}
+        {"input_ids": [101, 7592, 2222, 2213, 1010, 2054, 1005, 1055, 2039, 1029, 102]},
     ]
 
 
@@ -84,13 +148,9 @@ class TestTransformersTokenizerSplitIntoWordsError(BaseDataProcessorTest):
     processor = TransformersTokenizer(
         tokenizer="./tests/artifacts/tokenizers/bert-base-uncased", is_split_into_words=True
     )
-    input_features = {
-        "text": String,
-    }
+    input_features = {"text": String}
     input_data = [
-        {
-            "text": "Hello LLM, what's up?",
-        }
+        {"text": "Hello LLM, what's up?"},
     ]
     expected_verification_error = TypeError
 
@@ -102,17 +162,13 @@ class TestTransformersTokenizerMaxLengthPadding(BaseDataProcessorTest):
         truncation=True,
         max_length=15,
     )
-    input_features = {
-        "text": String,
-    }
+    input_features = {"text": String}
     input_data = [
-        {
-            "text": "Hello LLM, what's up?",
-        }
+        {"text": "Hello LLM, what's up?"},
     ]
     expected_output_feature = TokenizerOutput
     expected_output_data = [
-        {"input_ids": [101, 7592, 2222, 2213, 1010, 2054, 1005, 1055, 2039, 1029, 102, 0, 0, 0, 0]}
+        {"input_ids": [101, 7592, 2222, 2213, 1010, 2054, 1005, 1055, 2039, 1029, 102, 0, 0, 0, 0]},
     ]
 
     def execute_test(self):
