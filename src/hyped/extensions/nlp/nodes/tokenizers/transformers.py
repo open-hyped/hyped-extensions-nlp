@@ -149,6 +149,12 @@ class TokenizerOutput(Mapping):
     """Word-level alignment indices for tokens, included
     if `return_word_ids` is enabled."""
 
+    labels: Annotated[
+        Sequence[Int32],
+        OutputLength,
+        ExcludeFieldIf(lambda c, i, _: "text_target" not in i),
+    ]
+
 
 def _validate_text_type(
     feature: String | Sequence[String],
@@ -230,9 +236,9 @@ class TransformersTokenizer(BaseDataProcessor[TransformersTokenizerConfig]):
         # apply tokenizer
         enc = self.tokenizer(
             text=text.to_pylist(),
-            text_pair=text_pair,
-            text_target=text_target,
-            text_pair_target=text_pair_target,
+            text_pair=text_pair.to_pylist() if text_pair is not None else None,
+            text_target=text_target.to_pylist() if text_target is not None else None,
+            text_pair_target=text_pair_target.to_pylist() if text_pair_target is not None else None,
             add_special_tokens=self.config.add_special_tokens,
             padding=self.config.padding,
             truncation=self.config.truncation,
