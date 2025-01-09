@@ -8,11 +8,16 @@ from typing import TYPE_CHECKING
 from .__version__ import __version__, __version_tuple__
 
 # list all imports
-__all__ = ["CharToTokenSpans", "TransformersTokenizer"]
+__all__ = [
+    "CharToTokenSpans",
+    "TransformersTokenizer",
+    "OpenAIChatCompletion",
+]
 
 if TYPE_CHECKING:  # pragma: not covered
     # standard imports for static type checkers, linting and auto-completion
     # add your normal imports here
+    from .nodes.api.openai import OpenAIChatCompletion
     from .nodes.spans.char_to_token import CharToTokenSpans
     from .nodes.tokenizers.transformers import TransformersTokenizer
 
@@ -23,8 +28,9 @@ else:
 
     # lazy imports
     _lazy_imports = {
-        "CharToTokenSpans": "hyped.extensions.nlp.nodes.spans.char_to_token",
-        "TransformersTokenizer": "hyped.extensions.nlp.nodes.tokenizers.transformers",
+        "CharToTokenSpans": ".nodes.spans.char_to_token",
+        "TransformersTokenizer": ".nodes.tokenizers.transformers",
+        "OpenAIChatCompletion": ".nodes.api.openai",
     }
 
     sys.modules[__name__] = LazyModule(
