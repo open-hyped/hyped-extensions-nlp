@@ -2,6 +2,7 @@ from hyped.core.testing.processor import BaseDataProcessorTest
 from hyped.extensions.nlp import Jinja2Processor
 from hyped.typing import Int, String
 
+
 class TestJinja2Processor(BaseDataProcessorTest):
     processor = Jinja2Processor(template="Value: {{ value }}")
     input_features = {"value": Int}

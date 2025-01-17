@@ -15,7 +15,6 @@ if TYPE_CHECKING:  # pragma: not covered
     # add your normal imports here
     from .nodes.spans.char_to_token import CharToTokenSpans
     from .nodes.tokenizers.transformers import TransformersTokenizer
-    from .nodes.utils.jinja2 import Jinja2Processor
 
 else:
     import sys

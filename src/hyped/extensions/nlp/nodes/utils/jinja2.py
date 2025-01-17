@@ -1,7 +1,17 @@
+"""This module implements a Jinja2-based data processor for rendering templates.
+
+It contains the implementation of a data processor that leverages the Jinja2
+template engine to render input data into formatted output strings. The processor
+takes a Jinja2 template, substitutes the provided values into the template, and
+returns the rendered result. It allows flexible configuration of templates and
+handles the substitution of dynamic input data into the templates during processing.
+"""
+
+from jinja2 import Template
+
 from hyped.core import BaseDataProcessor, BaseDataProcessorConfig, RunContext, process_mode
 from hyped.typing import Feature, String
 
-from jinja2 import Template
 
 class Jinja2ProcessorConfig(BaseDataProcessorConfig):
     """Configuration class for the :class:`Jinja2Processor`."""
@@ -11,7 +21,7 @@ class Jinja2ProcessorConfig(BaseDataProcessorConfig):
 
 
 class Jinja2Processor(BaseDataProcessor[Jinja2ProcessorConfig]):
-    """A processor that renders data using a Jinja2 template.
+    r"""A processor that renders data using a Jinja2 template.
 
     This processor takes input data, substitutes it into a Jinja2 template,
     and returns the rendered output as a string.
@@ -24,7 +34,7 @@ class Jinja2Processor(BaseDataProcessor[Jinja2ProcessorConfig]):
         Hello, {{ name }}!
         Your score is {{ score }}.
         \"\"\"
-    
+
     """
 
     def initialize(self, ctx: RunContext) -> None:
@@ -34,7 +44,7 @@ class Jinja2Processor(BaseDataProcessor[Jinja2ProcessorConfig]):
         It sets up the template object for rendering.
 
         Args:
-            ctx (RunContext): The runtime context for the processor, providing environment information.
+            ctx (RunContext): The runtime context for the processor.
         """
         self.template = Template(source=self.config.template)
 
