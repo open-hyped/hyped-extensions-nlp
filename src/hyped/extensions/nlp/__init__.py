@@ -15,6 +15,7 @@ if TYPE_CHECKING:  # pragma: not covered
     # add your normal imports here
     from .nodes.spans.char_to_token import CharToTokenSpans
     from .nodes.tokenizers.transformers import TransformersTokenizer
+    from .nodes.utils.jinja2 import Jinja2Processor
 
 else:
     import sys
@@ -25,6 +26,7 @@ else:
     _lazy_imports = {
         "CharToTokenSpans": "hyped.extensions.nlp.nodes.spans.char_to_token",
         "TransformersTokenizer": "hyped.extensions.nlp.nodes.tokenizers.transformers",
+        "Jinja2Processor": "hyped.extensions.nlp.nodes.utils.jinja2",
     }
 
     sys.modules[__name__] = LazyModule(
