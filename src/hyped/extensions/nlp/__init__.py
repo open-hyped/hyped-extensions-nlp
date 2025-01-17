@@ -8,11 +8,7 @@ from typing import TYPE_CHECKING
 from .__version__ import __version__, __version_tuple__
 
 # list all imports
-__all__ = [
-    "CharToTokenSpans",
-    "TransformersTokenizer",
-    "OpenAIChatCompletion",
-]
+__all__ = ["CharToTokenSpans", "TransformersTokenizer", "OpenAIChatCompletion", "Jinja2Processor"]
 
 if TYPE_CHECKING:  # pragma: not covered
     # standard imports for static type checkers, linting and auto-completion
@@ -20,6 +16,7 @@ if TYPE_CHECKING:  # pragma: not covered
     from .nodes.api.openai import OpenAIChatCompletion
     from .nodes.spans.char_to_token import CharToTokenSpans
     from .nodes.tokenizers.transformers import TransformersTokenizer
+    from .nodes.utils.jinja2 import Jinja2Processor
 
 else:
     import sys
@@ -31,6 +28,7 @@ else:
         "CharToTokenSpans": ".nodes.spans.char_to_token",
         "TransformersTokenizer": ".nodes.tokenizers.transformers",
         "OpenAIChatCompletion": ".nodes.api.openai",
+        "Jinja2Processor": "hyped.extensions.nlp.nodes.utils.jinja2",
     }
 
     sys.modules[__name__] = LazyModule(
