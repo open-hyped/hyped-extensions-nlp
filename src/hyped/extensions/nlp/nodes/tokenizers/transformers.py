@@ -263,4 +263,4 @@ class TransformersTokenizer(BaseDataProcessor[TransformersTokenizerConfig]):
                 for j in range(len(ctx.index))
             ]
         # convert dict-of-lists to arrow StructArray
-        return pa.table(out, schema=ctx.output_type.arrow_schema).to_struct_array()
+        return pa.table(out, schema=ctx.output_dtype.arrow_schema).to_struct_array()
