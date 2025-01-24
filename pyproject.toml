@@ -1,5 +1,5 @@
 [project]
-name = "hyped-extension-nlp"
+name = "hyped-extensions-nlp"
 dynamic = ["version"]
 description = "Natural Language Processing Extension"
 readme = "README.md"
