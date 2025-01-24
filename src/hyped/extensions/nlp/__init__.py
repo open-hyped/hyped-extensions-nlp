@@ -8,12 +8,17 @@ from typing import TYPE_CHECKING
 from .__version__ import __version__, __version_tuple__
 
 # list all imports
-__all__ = ["CharToTokenSpans", "TransformersTokenizer"]
+__all__ = [
+    "CharToTokenSpans",
+    "TransformersTokenizer",
+    "SpacyProcessor",
+]
 
 if TYPE_CHECKING:  # pragma: not covered
     # standard imports for static type checkers, linting and auto-completion
     # add your normal imports here
     from .nodes.spans.char_to_token import CharToTokenSpans
+    from .nodes.spans.spacy import SpacyProcessor
     from .nodes.tokenizers.transformers import TransformersTokenizer
 
 else:
@@ -24,6 +29,7 @@ else:
     # lazy imports
     _lazy_imports = {
         "CharToTokenSpans": "hyped.extensions.nlp.nodes.spans.char_to_token",
+        "SpacyProcessor": ".nodes.spans.spacy",
         "TransformersTokenizer": "hyped.extensions.nlp.nodes.tokenizers.transformers",
         "Jinja2Processor": "hyped.extensions.nlp.nodes.utils.jinja2",
     }

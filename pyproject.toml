@@ -26,6 +26,7 @@ tests = [
     "pytest-cov",
 ]
 docs = ["sphinx", "furo"]
+spacy = ["spacy>=3.8.4"]
 
 [build-system]
 requires = ["setuptools >= 61.0.0", "setuptools_scm>=8.0.0"]
