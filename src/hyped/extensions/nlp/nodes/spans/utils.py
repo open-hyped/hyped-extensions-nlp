@@ -3,9 +3,13 @@
 This module provides utility functions for handling and validating.
 """
 from enum import Enum
-from typing import Optional
+from typing import Optional, TypeAlias
 
 import numpy as np
+from hyped.typing import Sequence, Int, Len, Annotated
+
+Span: TypeAlias = Annotated[Sequence[Int], Len(2)]
+Spans: TypeAlias = Sequence[Span]
 
 
 def compute_spans_overlap_matrix(

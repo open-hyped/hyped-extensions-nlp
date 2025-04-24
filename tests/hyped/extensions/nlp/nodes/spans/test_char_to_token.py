@@ -3,7 +3,7 @@ from typing import Annotated
 from hyped.core.testing.processor import BaseDataProcessorTest
 from hyped.core.typing import Int, Len, Sequence
 from hyped.extensions.nlp import CharToTokenSpans
-from hyped.extensions.nlp.nodes.spans.char_to_token import Spans
+from hyped.extensions.nlp.nodes.spans.utils import Spans
 
 
 class TestCharToTokenSpans(BaseDataProcessorTest):

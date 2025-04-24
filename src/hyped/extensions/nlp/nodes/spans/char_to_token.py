@@ -8,7 +8,7 @@ import numpy as np
 from typing_extensions import Annotated
 
 from hyped.core import BaseDataProcessor, BaseDataProcessorConfig, RunContext
-from hyped.extensions.nlp.nodes.spans.utils import compute_spans_overlap_matrix
+from hyped.extensions.nlp.nodes.spans.utils import compute_spans_overlap_matrix, Spans
 from hyped.typing import Int, Len, Sequence
 
 
@@ -22,8 +22,6 @@ class CharToTokenSpansConfig(BaseDataProcessorConfig):
     """Whether to include tokens that are only partly covered at the end of the query span."""
 
 
-Span = Annotated[Sequence[Int], Len(2)]
-Spans = Sequence[Span]
 ChrSpansLength = Len()
 QuerySpansLength = Len()
 
