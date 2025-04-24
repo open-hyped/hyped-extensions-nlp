@@ -42,9 +42,6 @@ class SpansToMask(BaseDataProcessor[SpansToMaskConfig]):
         spans = np.array(spans)
         mask = np.zeros(length, dtype=int)
 
-        print(spans)
-        print(mask, length)
-
         if spans.ndim == 2:
             # Increment at span starts, decrement at span ends
             np.add.at(mask, spans[:, 0], 1)
