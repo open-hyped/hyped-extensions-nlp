@@ -1,6 +1,3 @@
-
-from typing import Annotated
-
 from hyped.core.testing.processor import BaseDataProcessorTest
 from hyped.core.typing import Int, Bool, Sequence
 from hyped.extensions.nlp import SpansToMask
