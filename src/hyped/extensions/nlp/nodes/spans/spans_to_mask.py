@@ -40,7 +40,7 @@ class SpansToMask(BaseDataProcessor[SpansToMaskConfig]):
             and :code:`False` otherwise.
         """
         spans = np.array(spans)
-        mask = np.zeros(length, dtype=int)
+        mask = np.zeros(length+1, dtype=int)
 
         if spans.ndim == 2:
             # Increment at span starts, decrement at span ends
@@ -48,4 +48,4 @@ class SpansToMask(BaseDataProcessor[SpansToMaskConfig]):
             np.add.at(mask, spans[:, 1], -1)
 
         # Compute the cumulative sum and threshold to generate the mask
-        return np.cumsum(mask) > 0
+        return np.cumsum(mask[:-1]) > 0

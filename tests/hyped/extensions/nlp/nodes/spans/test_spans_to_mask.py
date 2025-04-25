@@ -55,3 +55,18 @@ class TestSpansToMaskWithOverlap(BaseDataProcessorTest):
     ]
     expected_output_feature = Sequence[Bool]
     expected_output_data = [[True, True, True, True, True, True, True, False, False, False]]
+
+class TestSpansToMaskFullSequence(BaseDataProcessorTest):
+    processor = SpansToMask()
+    input_features = {
+        "spans": Spans,
+        "length": Int,
+    }
+    input_data = [
+        {
+            "spans": [[0, 10]],
+            "length": 10,
+        }
+    ]
+    expected_output_feature = Sequence[Bool]
+    expected_output_data = [[True, True, True, True, True, True, True, True, True, True]]
