@@ -1,6 +1,7 @@
 from hyped.core.testing.processor import BaseDataProcessorTest
 from hyped.core.typing import Int, Bool, Sequence
 from hyped.extensions.nlp import ExtractSpans
+from hyped.core.executor import NodeExecutionError
 from hyped.extensions.nlp.nodes.spans.utils import Spans
 
 class TestExtractSpans(BaseDataProcessorTest):
@@ -68,7 +69,7 @@ class TestExtractSpansErrorOnMismatch(BaseDataProcessorTest):
             "end_marker": 2
         }
     ]
-    expected_execution_error = ValueError
+    expected_execution_error = NodeExecutionError
 
 class TestExtractSpansErrorOnInvalid(BaseDataProcessorTest):
     processor = ExtractSpans()
@@ -84,7 +85,7 @@ class TestExtractSpansErrorOnInvalid(BaseDataProcessorTest):
             "end_marker": 2
         }
     ]
-    expected_execution_error = ValueError
+    expected_execution_error = NodeExecutionError
 
 class TestExtractSpansUnclosedFinal(BaseDataProcessorTest):
     processor = ExtractSpans(allow_unclosed_final_span=True)
