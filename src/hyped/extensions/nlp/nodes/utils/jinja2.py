@@ -7,7 +7,7 @@ returns the rendered result. It allows flexible configuration of templates and
 handles the substitution of dynamic input data into the templates during processing.
 """
 
-from jinja2 import Template
+from jinja2 import Template, StrictUndefined
 
 from hyped.core import BaseDataProcessor, BaseDataProcessorConfig, RunContext, process_mode
 from hyped.typing import Feature, String
@@ -46,7 +46,10 @@ class Jinja2Processor(BaseDataProcessor[Jinja2ProcessorConfig]):
         Args:
             ctx (RunContext): The runtime context for the processor.
         """
-        self.template = Template(source=self.config.template)
+        self.template = Template(
+            source=self.config.template,
+            undefined=StrictUndefined
+        )
 
     @process_mode(batched=False, backend="python")
     def process(self, ctx: RunContext, **kwargs: Feature) -> String:
