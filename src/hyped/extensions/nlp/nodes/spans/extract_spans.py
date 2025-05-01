@@ -31,6 +31,8 @@ class ExtractSpansConfig(BaseDataProcessorConfig):
     end of the sequence.
     """
 
+    ignore_unmatched_markers: bool = False
+
 
 class ExtractSpans(BaseDataProcessor[ExtractSpansConfig]):
     """Processor to extract span intervals based on paired markers.
@@ -71,35 +73,43 @@ class ExtractSpans(BaseDataProcessor[ExtractSpansConfig]):
         end_indices = np.where(sequence == end_marker)[0] + 1
 
         # Handle unmatched end marker at the beginning
-        if (
-            (len(begin_indices) != 0)
-            and (len(end_indices) != 0)
-            and (begin_indices[0] > end_indices[0])
-        ) or (
-            (len(begin_indices) == 0)
-            and (len(end_indices) != 0)
+        if self.config.allow_unclosed_initial_span and (
+            (
+                (len(begin_indices) != 0)
+                and (len(end_indices) != 0)
+                and (begin_indices[0] > end_indices[0])
+            ) or (
+                (len(begin_indices) == 0)
+                and (len(end_indices) != 0)
+            )
         ):
-            if self.config.allow_unclosed_initial_span:
-                begin_indices = np.insert(begin_indices, 0, 0)
-            else:
-                raise ValueError("Mismatched number of markers: unmatched end marker at start")
+            begin_indices = np.insert(begin_indices, 0, 0)
 
         # Handle unmatched begin marker at the end
-        if (
-            (len(begin_indices) != 0)
-            and (len(end_indices) != 0)
-            and (begin_indices[-1] > end_indices[-1])
-        ) or (
-            (len(begin_indices) != 0)
-            and (len(end_indices) == 0)
+        if self.config.allow_unclosed_final_span and (
+            (
+                (len(begin_indices) != 0)
+                and (len(end_indices) != 0)
+                and (begin_indices[-1] > end_indices[-1])
+            ) or (
+                (len(begin_indices) != 0)
+                and (len(end_indices) == 0)
+            )
         ):
-            if self.config.allow_unclosed_final_span:
-                end_indices = np.append(end_indices, len(sequence))
-            else:
-                raise ValueError("Mismatched number of markers: unmatched begin marker at end")
+            end_indices = np.append(end_indices, len(sequence))
+
+        if self.config.ignore_unmatched_markers:
+            # TODO: tests for this feature
+            M = (begin_indices[:, None] < end_indices[None, :])
+            M[:-1, :] = ~(M[:-1, :] == M[1:, :]).all(axis=1, keepdims=True)
+            M[:, 1:] = ~(M[:, :-1] == M[:, 1:]).all(axis=0, keepdims=True)
+            begin_indices = begin_indices[M.any(axis=1)]
+            end_indices = end_indices[M.any(axis=0)]
+            assert len(begin_indices) == len(end_indices)
+            assert (begin_indices < end_indices).all()
 
         # Disallow any other mismatch
-        elif len(begin_indices) != len(end_indices):
+        if len(begin_indices) != len(end_indices):
             raise ValueError("Mismatched number of begin and end markers")
 
         # Ensure ordering: begin must always precede end
