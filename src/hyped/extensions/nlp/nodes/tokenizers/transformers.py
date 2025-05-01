@@ -24,6 +24,16 @@ from hyped.core.typing import SequenceFeature, StringFeature
 from hyped.typing import ExcludeFieldIf, FeatureValidator, Int32, Len, Mapping, Sequence, String
 
 
+class Message(Mapping):
+    """Represents a single message in a conversation."""
+
+    role: String
+    """The role of the message sender (e.g., "user", "assistant")."""
+
+    content: String
+    """The text content of the message."""
+
+
 class TransformersTokenizerConfig(BaseDataProcessorConfig):
     """Configuration for the Transformers Tokenizer processor."""
 
@@ -264,3 +274,93 @@ class TransformersTokenizer(BaseDataProcessor[TransformersTokenizerConfig]):
             ]
         # convert dict-of-lists to arrow StructArray
         return pa.table(out, schema=ctx.output_dtype.arrow_schema).to_struct_array()
+
+    def apply_chat_template(
+        self,
+        conversation: Sequence[Message],
+        add_generation_prompt: bool = False,
+        continue_final_message: bool = False,
+    ) -> String:
+        """Applies the tokenizer's chat template to a sequence of messages.
+
+        This method utilizes the :code:`apply_chat_template` method of the underlying
+        HuggingFace tokenizer to format a conversation into a single string
+        according to the tokenizer's specific chat template.
+
+        Args:
+            conversation (Sequence[Message]): A sequence of :code:`Message` objects,
+                each containing a :code:`'role'` and :code:`'content'`.
+            add_generation_prompt (bool): Whether to add the generation prompt to the
+                end of the formatted conversation. Defaults to False.
+            continue_final_message (bool): Whether to continue the final message in the
+                conversation. Defaults to False.
+
+        Returns:
+            String: The formatted conversation string.
+        """
+        return ApplyChatTemplate(
+            tokenizer=self.config.tokenizer,
+            add_generation_prompt=add_generation_prompt,
+            continue_final_message=continue_final_message,
+        ).call(conversation=conversation)
+
+
+class ApplyChatTemplateConfig(BaseDataProcessorConfig):
+    """Configuration for the :class:`ApplyChatTemplate` processor."""
+
+    tokenizer: str
+    """The name or path of the pre-trained tokenizer."""
+
+    add_generation_prompt: bool = False
+    """Whether to add the generation prompt."""
+
+    continue_final_message: bool = False
+    """Whether to continue the final message."""
+
+
+class ApplyChatTemplate(BaseDataProcessor[ApplyChatTemplateConfig]):
+    """Processor for applying a tokenizer's chat template to conversations.
+
+    This processor takes a sequence of messages representing a conversation
+    and formats them into a single string using the chat template defined
+    in the specified tokenizer's configuration.
+    """
+
+    def __init__(self, config: None | TransformersTokenizerConfig = None, **kwargs) -> None:
+        """Initialize the Apply Chat Template processor.
+
+        Args:
+            config (ApplyChatTemplateConfig): Processor configuration.
+            **kwargs: Additional keyword arguments that update the provided configuration
+                or create a new configuration if none is provided.
+        """
+        super(ApplyChatTemplate, self).__init__(config, **kwargs)
+        # load the tokenizer instance
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.config.tokenizer, use_fast=True, add_prefix_space=True
+        )
+
+    # TODO: support tools and documents
+    @process_mode(batched=True, backend="arrow")
+    def process(
+        self,
+        ctx: RunContext,
+        conversation: Sequence[Message],
+    ) -> String:
+        """Applies the tokenizer's chat template to a batch of conversations.
+
+        Args:
+            ctx (RunContext): The runtime context of the process.
+            conversation (Sequence[Message]): A sequence of `Message` objects
+                for each conversation in the batch.
+
+        Returns:
+            String: An Arrow array of formatted conversation strings.
+        """
+        texts = self.tokenizer.apply_chat_template(
+            conversation=conversation.to_pylist(),
+            add_generation_prompt=self.config.add_generation_prompt,
+            continue_final_message=self.config.continue_final_message,
+            tokenize=False,
+        )
+        return pa.array(texts, type=pa.string())
