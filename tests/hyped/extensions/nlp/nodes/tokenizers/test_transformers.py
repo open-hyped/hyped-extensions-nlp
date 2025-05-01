@@ -1,7 +1,13 @@
+from unittest.mock import MagicMock, patch
+
 from hyped.core.testing.processor import BaseDataProcessorTest
 from hyped.core.typing import Sequence, String
 from hyped.extensions.nlp import TransformersTokenizer
-from hyped.extensions.nlp.nodes.tokenizers.transformers import TokenizerOutput
+from hyped.extensions.nlp.nodes.tokenizers.transformers import (
+    ApplyChatTemplate,
+    Message,
+    TokenizerOutput,
+)
 
 
 class TestTransformersTokenizer(BaseDataProcessorTest):
@@ -14,6 +20,27 @@ class TestTransformersTokenizer(BaseDataProcessorTest):
     expected_output_data = [
         {"input_ids": [101, 7592, 2222, 2213, 1010, 2054, 1005, 1055, 2039, 1029, 102]},
     ]
+
+    @patch("hyped.extensions.nlp.nodes.tokenizers.transformers.ApplyChatTemplate")
+    def test_apply_chat_template(self, mock_apply_chat_template_type: MagicMock) -> None:
+        processor = type(self).processor
+        # create mock inputs
+        mock_conversation = MagicMock()
+        mock_add_generation_prompt = MagicMock()
+        mock_continue_final_message = MagicMock()
+        # call the function
+        out = processor.apply_chat_template(
+            conversation=mock_conversation,
+            add_generation_prompt=mock_add_generation_prompt,
+            continue_final_message=mock_continue_final_message,
+        )
+        # check call
+        assert out == mock_apply_chat_template_type.return_value.call.return_value
+        mock_apply_chat_template_type.assert_called_once_with(
+            tokenizer=processor.config.tokenizer,
+            add_generation_prompt=mock_add_generation_prompt,
+            continue_final_message=mock_continue_final_message,
+        )
 
 
 class TestTransformersTokenizerAllFeatures(BaseDataProcessorTest):
@@ -174,3 +201,53 @@ class TestTransformersTokenizerMaxLengthPadding(BaseDataProcessorTest):
     def execute_test(self):
         output_feature: TokenizerOutput = super().execute_test()[0]
         assert output_feature["input_ids"].dtype.length == 15
+
+
+class TestTransformersTokenizerApplyChatTemplate(BaseDataProcessorTest):
+    processor = ApplyChatTemplate(tokenizer="./tests/artifacts/tokenizers/mistral-7b-instruct-v0.3")
+    input_features = {"conversation": Sequence[Message]}
+    input_data = [
+        {
+            "conversation": [
+                {"role": "user", "content": "Hello from User"},
+                {"role": "assistant", "content": "Hello from Assistant"},
+            ]
+        }
+    ]
+    expected_output_feature = String
+    expected_output_data = ["<s>[INST] Hello from User[/INST] Hello from Assistant</s>"]
+
+
+class TestTransformersTokenizerApplyChatTemplateAddGenerationPrompt(BaseDataProcessorTest):
+    processor = ApplyChatTemplate(
+        tokenizer="./tests/artifacts/tokenizers/mistral-7b-instruct-v0.3",
+        add_generation_prompt=True,
+    )
+    input_features = {"conversation": Sequence[Message]}
+    input_data = [
+        {
+            "conversation": [
+                {"role": "user", "content": "Hello from User"},
+            ]
+        }
+    ]
+    expected_output_feature = String
+    expected_output_data = ["<s>[INST] Hello from User[/INST]"]
+
+
+class TestTransformersTokenizerApplyChatTemplateContinueFinalMessage(BaseDataProcessorTest):
+    processor = ApplyChatTemplate(
+        tokenizer="./tests/artifacts/tokenizers/mistral-7b-instruct-v0.3",
+        continue_final_message=True,
+    )
+    input_features = {"conversation": Sequence[Message]}
+    input_data = [
+        {
+            "conversation": [
+                {"role": "user", "content": "Hello from User"},
+                {"role": "assistant", "content": "Hello from Assistant"},
+            ]
+        }
+    ]
+    expected_output_feature = String
+    expected_output_data = ["<s>[INST] Hello from User[/INST] Hello from Assistant"]
