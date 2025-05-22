@@ -106,8 +106,8 @@ class ExtractSpans(BaseDataProcessor[ExtractSpansConfig]):
         if self.config.ignore_unmatched_markers:
             # TODO: tests for this feature
             mask = begin_indices[:, None] < end_indices[None, :]
-            mask[:-1, :] = ~(mask[:-1, :] == mask[1:, :]).all(axis=1, keepdims=True)
-            mask[:, 1:] = ~(mask[:, :-1] == mask[:, 1:]).all(axis=0, keepdims=True)
+            mask[:-1, :] &= ~(mask[:-1, :] == mask[1:, :]).all(axis=1, keepdims=True)
+            mask[:, 1:] &= ~(mask[:, :-1] == mask[:, 1:]).all(axis=0, keepdims=True)
             begin_indices = begin_indices[mask.any(axis=1)]
             end_indices = end_indices[mask.any(axis=0)]
             assert len(begin_indices) == len(end_indices)
