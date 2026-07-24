@@ -6,7 +6,8 @@ from enum import Enum
 from typing import Optional, TypeAlias
 
 import numpy as np
-from hyped.typing import Sequence, Int, Len, Annotated
+
+from hyped.typing import Annotated, Int, Len, Sequence
 
 Span: TypeAlias = Annotated[Sequence[Int], Len(2)]
 Spans: TypeAlias = Sequence[Span]

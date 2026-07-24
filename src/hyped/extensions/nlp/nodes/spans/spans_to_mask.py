@@ -5,9 +5,10 @@ and returns a boolean mask indicating which positions fall inside any of the inp
 """
 
 import numpy as np
-from hyped.typing import Sequence, Int, Bool
-from hyped.core import BaseDataProcessor, BaseDataProcessorConfig, process_mode, RunContext
+
+from hyped.core import BaseDataProcessor, BaseDataProcessorConfig, RunContext, process_mode
 from hyped.extensions.nlp.nodes.spans.utils import Spans
+from hyped.typing import Bool, Int, Sequence
 
 
 class SpansToMaskConfig(BaseDataProcessorConfig):
@@ -40,7 +41,7 @@ class SpansToMask(BaseDataProcessor[SpansToMaskConfig]):
             and :code:`False` otherwise.
         """
         spans = np.array(spans)
-        mask = np.zeros(length+1, dtype=int)
+        mask = np.zeros(length + 1, dtype=int)
 
         if spans.ndim == 2:
             # Increment at span starts, decrement at span ends

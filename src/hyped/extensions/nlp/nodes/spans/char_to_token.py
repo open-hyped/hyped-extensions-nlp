@@ -8,7 +8,7 @@ import numpy as np
 from typing_extensions import Annotated
 
 from hyped.core import BaseDataProcessor, BaseDataProcessorConfig, RunContext
-from hyped.extensions.nlp.nodes.spans.utils import compute_spans_overlap_matrix, Spans
+from hyped.extensions.nlp.nodes.spans.utils import Spans, compute_spans_overlap_matrix
 from hyped.typing import Int, Len, Sequence
 
 
