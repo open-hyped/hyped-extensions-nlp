@@ -1,5 +1,5 @@
 from hyped.core.testing.processor import BaseDataProcessorTest
-from hyped.core.typing import Int, Bool, Sequence
+from hyped.core.typing import Bool, Int, Sequence
 from hyped.extensions.nlp import SpansToMask
 from hyped.extensions.nlp.nodes.spans.utils import Spans
 
@@ -18,6 +18,7 @@ class TestSpansToMask(BaseDataProcessorTest):
     ]
     expected_output_feature = Sequence[Bool]
     expected_output_data = [[True, True, True, False, False, False, True, False, False, False]]
+
 
 class TestSpansToMaskWithEmptySpans(BaseDataProcessorTest):
     processor = SpansToMask()
@@ -38,8 +39,9 @@ class TestSpansToMaskWithEmptySpans(BaseDataProcessorTest):
     expected_output_feature = Sequence[Bool]
     expected_output_data = [
         [False, False, False, False, False, False, False, False, False, False],
-        [False, False, False, False, False, False, False, False, False, False]
+        [False, False, False, False, False, False, False, False, False, False],
     ]
+
 
 class TestSpansToMaskWithOverlap(BaseDataProcessorTest):
     processor = SpansToMask()
@@ -55,6 +57,7 @@ class TestSpansToMaskWithOverlap(BaseDataProcessorTest):
     ]
     expected_output_feature = Sequence[Bool]
     expected_output_data = [[True, True, True, True, True, True, True, False, False, False]]
+
 
 class TestSpansToMaskFullSequence(BaseDataProcessorTest):
     processor = SpansToMask()

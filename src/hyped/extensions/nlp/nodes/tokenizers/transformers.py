@@ -11,7 +11,7 @@ from typing import Annotated
 
 import pyarrow as pa
 from transformers import AutoTokenizer
-from transformers.tokenization_utils import PaddingStrategy, TruncationStrategy
+from transformers.tokenization_utils_base import PaddingStrategy, TruncationStrategy
 
 from hyped.core import (
     BaseDataProcessor,
